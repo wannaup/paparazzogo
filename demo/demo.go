@@ -1,34 +1,74 @@
 package main
 
 import (
-	"github.com/putsi/paparazzogo"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"github.com/wannaup/paparazzogo"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 )
 
 func main() {
-
+	fmt.Println("MJPEG restreamer forked from https://github.com/putsi/paparazzogo")
+	fmt.Println("Wannaup srls - 2015")
 	// Local server settings
-	imgPath := "/img.jpg"
+	path2d := "/2d.jpg"
+	path3d := "/3d.jpg"
 	addr := ":8080"
-
+	streamUrls := map[string]string{}
 	// MJPEG-stream settings
 	user := ""
 	pass := ""
+
+	//get server to ask endpoint urls
+	var whoKnows = flag.String("configserver", "http://127.0.0.1:8000", "The address of the server who knows the config")
+	var timeout = flag.Int("grace", 30, "Timeout(s) after which* the stream will be closed if no requests")
+	flag.Parse()
+	//get endpoints urls
+	gotit := false
+	for !gotit {
+		time.Sleep(3 * time.Second)
+		resp, err := http.Get(*whoKnows + "/api/settings")
+		if err != nil {
+			fmt.Println("Could not contact config server, retrying...")
+			continue
+		}
+		defer resp.Body.Close()
+		//parse response and set config
+		body, errr := ioutil.ReadAll(resp.Body)
+		if errr != nil {
+			fmt.Println("Error getting resp body")
+			continue
+		}
+		err = json.Unmarshal(body, &streamUrls)
+		if err != nil {
+			fmt.Println("Error parsing resp body")
+			fmt.Println(err)
+			continue
+		}
+		gotit = true
+	}
+
+	fmt.Println("Got stream urls, starting ")
 	// If there is zero GET-requests for 30 seconds, mjpeg-stream will be closed.
 	// Streaming will be reopened after next request.
-	timeout := 30 * time.Second
-	mjpegStream := "http://194.117.170.14/axis-cgi/mjpg/video.cgi?camera=1&fps=4"
+	tout := time.Duration(*timeout) * time.Second
+	mjpegStream2 := streamUrls["videoStream"]
+	mjpegHandler2 := paparazzogo.NewMjpegproxy()
+	mjpegHandler2.OpenStream(mjpegStream2, user, pass, tout)
+	mjpegStream3 := streamUrls["depthStream"]
+	mjpegHandler3 := paparazzogo.NewMjpegproxy()
+	mjpegHandler3.OpenStream(mjpegStream3, user, pass, tout)
 
-	mjpegHandler := paparazzogo.NewMjpegproxy()
-	mjpegHandler.OpenStream(mjpegStream, user, pass, timeout)
-
-	http.Handle(imgPath, mjpegHandler)
+	http.Handle(path2d, mjpegHandler2)
+	http.Handle(path3d, mjpegHandler3)
 
 	s := &http.Server{
-		Addr:    addr,
-		Handler: mjpegHandler,
+		Addr: addr,
+		//Handler: mjpegHandler,
 		// Read- & Write-timeout prevent server from getting overwhelmed in idle connections
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
