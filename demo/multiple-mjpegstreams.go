@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/putsi/paparazzogo"
+	"github.com/wannaup/paparazzogo"
 	"log"
 	"net/http"
 	"time"

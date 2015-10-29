@@ -63,12 +63,13 @@ func main() {
 	mjpegHandler3 := paparazzogo.NewMjpegproxy()
 	mjpegHandler3.OpenStream(mjpegStream3, user, pass, tout)
 
-	http.Handle(path2d, mjpegHandler2)
-	http.Handle(path3d, mjpegHandler3)
+	mux := http.NewServeMux()
+	mux.Handle(path2d, mjpegHandler2)
+	mux.Handle(path3d, mjpegHandler3)
 
 	s := &http.Server{
-		Addr: addr,
-		//Handler: mjpegHandler,
+		Addr:    addr,
+		Handler: mux,
 		// Read- & Write-timeout prevent server from getting overwhelmed in idle connections
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
