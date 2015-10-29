@@ -17,7 +17,7 @@ func main() {
 	// Local server settings
 	path2d := "/2d.jpg"
 	path3d := "/3d.jpg"
-	addr := ":8080"
+	addr := ""
 	streamUrls := map[string]string{}
 	// MJPEG-stream settings
 	user := ""
@@ -26,7 +26,11 @@ func main() {
 	//get server to ask endpoint urls
 	var whoKnows = flag.String("configserver", "http://127.0.0.1:8000", "The address of the server who knows the config")
 	var timeout = flag.Int("grace", 30, "Timeout(s) after which* the stream will be closed if no requests")
+	var lPort = flag.Int("port", 5050, "Port to listen to (also edit config.json for WUI)")
 	flag.Parse()
+	//set listening port
+	addr = fmt.Sprintf(":%d", *lPort)
+	fmt.Print("listening on " + addr)
 	//get endpoints urls
 	gotit := false
 	for !gotit {
@@ -51,15 +55,15 @@ func main() {
 		}
 		gotit = true
 	}
-
+	fmt.Println(streamUrls)
 	fmt.Println("Got stream urls, starting ")
 	// If there is zero GET-requests for 30 seconds, mjpeg-stream will be closed.
 	// Streaming will be reopened after next request.
 	tout := time.Duration(*timeout) * time.Second
-	mjpegStream2 := streamUrls["videoStream"]
+	mjpegStream2 := streamUrls["videoSource"]
 	mjpegHandler2 := paparazzogo.NewMjpegproxy()
 	mjpegHandler2.OpenStream(mjpegStream2, user, pass, tout)
-	mjpegStream3 := streamUrls["depthStream"]
+	mjpegStream3 := streamUrls["depthSource"]
 	mjpegHandler3 := paparazzogo.NewMjpegproxy()
 	mjpegHandler3.OpenStream(mjpegStream3, user, pass, tout)
 
