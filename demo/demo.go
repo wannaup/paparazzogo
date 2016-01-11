@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+type streamConfig struct {
+	IEDepthSource string `json:"IEDepthSource"`
+	VideoSource   string `json:"videoSource"`
+	DepthSource   string `json:"depthSource"`
+	IEVideoSource string `json:"IEVideoSource"`
+}
+
 func main() {
 	fmt.Println("MJPEG restreamer forked from https://github.com/putsi/paparazzogo")
 	fmt.Println("Wannaup srls - 2015")
@@ -18,7 +25,7 @@ func main() {
 	path2d := "/2d.jpg"
 	path3d := "/3d.jpg"
 	addr := ""
-	streamUrls := map[string]string{}
+	streamUrls := streamConfig{}
 	// MJPEG-stream settings
 	user := ""
 	pass := ""
@@ -60,10 +67,10 @@ func main() {
 	// If there is zero GET-requests for 30 seconds, mjpeg-stream will be closed.
 	// Streaming will be reopened after next request.
 	tout := time.Duration(*timeout) * time.Second
-	mjpegStream2 := streamUrls["videoSource"]
+	mjpegStream2 := streamUrls.VideoSource
 	mjpegHandler2 := paparazzogo.NewMjpegproxy()
 	mjpegHandler2.OpenStream(mjpegStream2, user, pass, tout)
-	mjpegStream3 := streamUrls["depthSource"]
+	mjpegStream3 := streamUrls.DepthSource
 	mjpegHandler3 := paparazzogo.NewMjpegproxy()
 	mjpegHandler3.OpenStream(mjpegStream3, user, pass, tout)
 
