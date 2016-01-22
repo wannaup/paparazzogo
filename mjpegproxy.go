@@ -87,6 +87,8 @@ func (m *Mjpegproxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Expires", "0")
 		w.Header().Set("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		reader.WriteTo(w)
 	} else {
 		m.lastModLock.RLock()
